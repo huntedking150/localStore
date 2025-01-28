@@ -66,7 +66,7 @@ const HomePage = () => {
             </div>
 
             {/* Search Bar */}
-            <div className="flex  items-center gap-2 p-2 bg-slate-200 rounded-lg">
+            <div className="flex  items-center gap-2 p-2 bg-slate-200 rounded-lg sticky top-1 z-10 md:static w-full md:w-auto shadow-md md:shadow-none">
               <Search className="w-8 h-5 text-gray-600 " />
 
               <Input
@@ -113,10 +113,9 @@ const HomePage = () => {
             </div>
           </div>
         </main>
-
-        {/* Footer */}
-        <Footer />
       </div>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
