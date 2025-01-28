@@ -3,10 +3,19 @@ const app = express();// intializing the library functions
 require('dotenv/config');// library containning the secret and confidential information of server or anything
 const bodyParser= require('body-parser');// for the middleware understanding of obj between backend and frontend
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 //Middleware
 app.use(bodyParser.json());
 app.use(morgan('tiny'));
+// DATABASE
+mongoose.connect(process.env.Connection)
+.then(()=> {
+    console.log("Database connection is made");
+})
+.catch((error) => {
+    console.log(error);
 
+})
 const api= process.env. API_URL;
 const port = 8010;
 // get from the database and send it to the frontend through the server
