@@ -94,7 +94,7 @@ const HomePage = () => {
             </div>
 
             {/* Search Bar */}
-            <div className="flex  items-center gap-2 p-2 bg-slate-200 rounded-lg sticky top-1 z-10 md:static w-full md:w-auto shadow-md md:shadow-none">
+            <div className="flex  items-center gap-2 p-2 bg-slate-200 rounded-lg sticky top-1 z-10  w-full md:w-auto shadow-md md:shadow-none">
               <Search className="w-8 h-5 text-gray-600 " />
 
               <Input
@@ -123,7 +123,7 @@ const HomePage = () => {
                 Most Popular today 🔥
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {[...Array(9)].map((_, i) => (
+                {[...Array(19)].map((_, i) => (
                   <div
                     key={i}
                     className="aspect-square bg-orange-300 rounded-lg hover:scale-105 transition-transform cursor-pointer"
@@ -131,7 +131,7 @@ const HomePage = () => {
                 ))}
                 <button>
                   <div
-                    key={10}
+                    key={20}
                     className="aspect-square bg-orange-200 rounded-lg hover:scale-105 transition-transform cursor-pointer flex items-center justify-center"
                   >
                     <ArrowRight className="w-10 h-10" />
