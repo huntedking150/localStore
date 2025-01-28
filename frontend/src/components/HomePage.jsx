@@ -9,6 +9,8 @@ import { Input } from './ui/input.jsx';
 import Navbar from './Navbar.jsx';
 import Footer from './Footer.jsx';
 
+import { useState, useEffect } from 'react';
+
 const categories = [
   'Stationary',
   'Local Food Stalls',
@@ -28,6 +30,32 @@ const categories = [
 ];
 
 const HomePage = () => {
+  const [showFooter, setShowFooter] = useState(false);
+  const [isContentShort, setIsContentShort] = useState(false);
+
+  useEffect(() => {
+    const checkContentHeight = () => {
+      const contentHeight = document.body.scrollHeight;
+      const viewportHeight = window.innerHeight;
+      setIsContentShort(contentHeight <= viewportHeight); // Check if content is shorter than the viewport
+    };
+
+    const handleScroll = () => {
+      const isAtBottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 1;
+      setShowFooter(isAtBottom || isContentShort); // Show footer at bottom or if content is short
+    };
+
+    checkContentHeight(); // Initial check
+    window.addEventListener('resize', checkContentHeight); // Recheck on window resize
+    window.addEventListener('scroll', handleScroll); // Check on scroll
+
+    return () => {
+      window.removeEventListener('resize', checkContentHeight);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isContentShort]);
+
   return (
     <div
       className="min-h-screen  pb-24"
@@ -115,7 +143,16 @@ const HomePage = () => {
         </main>
       </div>
       {/* Footer */}
-      <Footer />
+
+      <div
+        className={`transition-all duration-300 ease-in-out ${
+          showFooter
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-full'
+        } fixed bottom-0 left-0 w-full`}
+      >
+        <Footer />
+      </div>
     </div>
   );
 };
