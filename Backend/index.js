@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 //Middleware
 app.use(bodyParser.json());
 app.use(morgan('tiny'));
-// DATABASE
+//DATABAS
 mongoose.connect(process.env.Connection)
 .then(()=> {
     console.log("Database connection is made");
@@ -16,6 +16,8 @@ mongoose.connect(process.env.Connection)
     console.log(error);
 
 })
+
+
 const api= process.env. API_URL;
 const port = 8010;
 // get from the database and send it to the frontend through the server
