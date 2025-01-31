@@ -1,9 +1,10 @@
-const express = require('express');// libary for the functionalities of server for the node modules
+import  Product from './product/productModel.js';
+import express from 'express';// libary for the functionalities of server for the node modules
 const app = express();// intializing the library functions
-require('dotenv/config');// library containning the secret and confidential information of server or anything
-const bodyParser= require('body-parser');// for the middleware understanding of obj between backend and frontend
-const morgan = require('morgan');
-const mongoose = require('mongoose');
+import 'dotenv/config';// library containning the secret and confidential information of server or anything
+import bodyParser from 'body-parser';// for the middleware understanding of obj between backend and frontend
+import morgan from 'morgan';
+import mongoose  from 'mongoose';
 //Middleware
 app.use(bodyParser.json());
 app.use(morgan('tiny'));
@@ -31,10 +32,26 @@ const port = 8010;
 // })
 
 app.post(`${api}/product`, (req, res)=> {
-    const newProduct = req.body;
-    console.log(newProduct);
-    res.send(newProduct);
+    const product = new Product({
+        id: req.body.Pid,
+        name: req.body.name,
+        brand: req.body.brand,
+        image: req.body.image
+    })
+    //? save it to the database
+product.save()
+.then((createdProduct => {
+    res.status(201).json(createdProduct);
+}))
+.catch((err)=> {
+    res.status(500).json({
+        error: err, 
+        success: false
+    })
 })
+
+})
+
 app.listen(port, ()=> {
     console.log(api);
     console.log('server is listening to {port}');
