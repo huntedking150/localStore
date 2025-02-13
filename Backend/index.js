@@ -6,12 +6,14 @@ import bodyParser from 'body-parser';// for the middleware understanding of obj 
 import morgan from 'morgan';
 import mongoose  from 'mongoose';
 import productsRoute from './product/product.router.js';
+import userRoute from './user/user.router.js';
 
 const api= process.env. API_URL;
 //Middleware
 app.use(bodyParser.json());
 app.use(morgan('tiny'));
-app.use(`${api}/product`, productsRoute)
+app.use(`${api}/product`, productsRoute);
+app.use(`${api}/user`,userRoute);
 //DATABAS
 mongoose.connect(process.env.Connection)
 .then(()=> {
@@ -31,5 +33,5 @@ const port = 8010;
 
 app.listen(port, ()=> {
     console.log(api);
-    console.log('server is listening to {port}');
+    console.log(`server is listening to ${port}`);
 })

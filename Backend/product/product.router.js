@@ -1,123 +1,277 @@
 import express from "express";
+import {
+  isBuyer,
+  isSeller,
+  isUser,
+} from "../middlewares/authentication.middleware.js";
+import validateIdFromReqParams from "../middlewares/validate.id.middleware.js";
+import validateReqBody from "../middlewares/validation.middleware.js";
+import Product from "./product.model.js";
+import {
+  addProductValidationSchema,
+  listProductByBuyerValidationSchema,
+  paginationValidationSchema,
+} from "./product.validation.js";
+
 const router = express.Router();
-import Product from './productModel.js';
 
-   // ? add product
-router.post(`/add`,  async (req, res) => {
-    //   extract new product from req.body
+// add product
+// steps:
+// 1.logged in user must be seller
+// 2.validate req body
+// 3.create product
+
+router.post(
+  "/product/add",
+  isSeller,
+  validateReqBody(addProductValidationSchema),
+  async (req, res) => {
+    // extract new product from req.body
     const newProduct = req.body;
-  
-    //   add product
+
+    // extract loggedInUserId
+    const loggedInUserId = req.loggedInUserId;
+
+    newProduct.sellerId = loggedInUserId;
+
+    
+
+    // create product
     await Product.create(newProduct);
-  
-    // send res
+
     return res.status(200).send({ message: "Product is added successfully." });
-  });
-    //? save it to the database
-
-
-// get from the database and send it to the frontend through the server
-// ? get product list
-router.get("/list", async (req, res) => {
-    const products = await Product.find(
-      {},
-      { name: 1, price: 1, brand: 1, image: 1, description: 1 }
-    );
-  
-    return res.status(200).send({ message: "success", productList: products });
-  });
-  // ? get single product
-router.get("/product/detail/:id", async (req, res) => {
-  //  extract product id from req.params
-  const productId = req.params.id;
-
-  // check for mongo id validity
-  const isValidObjectId = mongoose.isValidObjectId(productId);
-
-  // if  not valid mongo valid, throw error
-  if (!isValidObjectId) {
-    return res.status(400).send({ message: "Invalid mongo id." });
   }
+);
 
-  // find product using product id
-  const requiredProduct = await Product.findOne({ _id: productId });
+// get product details
+router.get(
+  "/product/details/:id",
+  isUser,
+  validateIdFromReqParams,
+  async (req, res) => {
+    // extract productId from req.params
+    const productId = req.params.id;
 
-  // if not product, throw error
-  if (!requiredProduct) {
-    return res.status(404).send({ message: "Product does not exist." });
-  }
+    // find product
+    const product = await Product.findOne({ _id: productId });
 
-  // send res
-  return res
-    .status(200)
-    .send({ message: "success", productDetail: requiredProduct });
-});
-
-// ? delete a product
-router.delete("/product/delete/:id", async (req, res) => {
-  // extract product id from req.params
-  const productId = req.params.id;
-
-  // check for mongo id validity
-  const isValidObjectId = mongoose.isValidObjectId(productId);
-
-  // if not valid mongo id, throw error
-  if (!isValidObjectId) {
-    return res.status(400).send({ message: "Invalid mongo id." });
-  }
-
-  // find product using product id
-  const requiredProduct = await Product.findOne({ _id: productId });
-
-  // if not product, throw error
-  if (!requiredProduct) {
-    return res.status(404).send({ message: "Product does not exist." });
-  }
-
-  // delete product by product id
-  await Product.deleteOne({ _id: productId });
-
-  // send res
-  return res.status(200).send({ message: "Product is deleted successfully." });
-});
-
-// ?  edit product
-router.put("/product/edit/:id", async (req, res) => {
-  // extract product id from req.params
-  const productId = req.params.id;
-
-  // check for mongo id validity
-  const isValidObjectId = mongoose.isValidObjectId(productId);
-
-  // if not valid mongo id, throw error
-  if (!isValidObjectId) {
-    return res.status(400).send({ message: "Invalid mongo id." });
-  }
-
-  // find product
-  const requiredProduct = await Product.findOne({ _id: productId });
-
-  // if not product, throw error
-  if (!requiredProduct) {
-    return res.status(404).send({ message: "Product does not exist." });
-  }
-
-  // extract new values from req.body
-  const newValues = req.body;
-
-  // edit product
-  await Product.updateOne(
-    { _id: productId },
-    {
-      $set: {
-        ...newValues,
-      },
+    // if not product, throw error
+    if (!product) {
+      return res.status(404).send({ message: "Product does not exist." });
     }
-  );
-  // send res
-  return res.status(200).send({ message: "Product is edited successfully." });
-});
-  
 
-  
- export default router;
+    // send res
+    return res.status(200).send({ message: "success", productDetail: product });
+  }
+);
+
+// delete a product
+router.delete(
+  "/product/delete/:id",
+  isSeller,
+  validateIdFromReqParams,
+  async (req, res) => {
+    // extract product id from req.params
+    const productId = req.params.id;
+
+    // find product
+    const product = await Product.findOne({ _id: productId });
+
+    // if not product, throw error
+    if (!product) {
+      return res.status(404).send({ message: "Product does not exist." });
+    }
+
+    // check product ownership
+
+    // to be product owner: product sellerId must be equal to logged in user id
+    const sellerId = product.sellerId;
+
+    const loggedInUserId = req.loggedInUserId;
+
+    // const isProductOwner = String(sellerId) === String(loggedInUserId);
+    // alternative code
+    const isProductOwner = sellerId.equals(loggedInUserId);
+
+    // if not product owner, throw error
+    if (!isProductOwner) {
+      return res
+        .status(403)
+        .send({ message: "You are not owner of this product." });
+    }
+
+    // delete product
+    await Product.deleteOne({ _id: productId });
+
+    // send response
+    return res
+      .status(200)
+      .send({ message: "Product is removed successfully." });
+  }
+);
+
+// edit a product
+router.put(
+  "/product/edit/:id",
+  isSeller,
+  validateIdFromReqParams,
+  validateReqBody(addProductValidationSchema),
+  async (req, res) => {
+    // extract product id from req.params
+    const productId = req.params.id;
+
+    // find product by id
+    const product = await Product.findById(productId);
+
+    // if not product, throw error
+    if (!product) {
+      return res.status(404).send({ message: "Product does not exist." });
+    }
+
+    // check for product ownership
+    // product's sellerId must be same with loggedInUserId
+    const productOwnerId = product.sellerId;
+    const loggedInUserId = req.loggedInUserId;
+
+    const isProductOwner = productOwnerId.equals(loggedInUserId);
+
+    // if not owner of product, throw error
+    if (!isProductOwner) {
+      return res
+        .status(403)
+        .send({ message: "You are not owner of this product." });
+    }
+
+    // extract newValues from req.body
+    const newValues = req.body;
+
+
+    // edit product
+    await Product.updateOne(
+      { _id: productId },
+      {
+        $set: {
+          ...newValues,
+        },
+      }
+    );
+
+    // send response
+    return res
+      .status(200)
+      .send({ message: "Product is updated successfully." });
+  }
+);
+
+// list product by buyer
+router.post(
+  "/product/list/buyer",
+  isBuyer,
+  validateReqBody(listProductByBuyerValidationSchema),
+  async (req, res) => {
+    // extract pagination data from req.body
+    const { page, limit, searchText,  minPrice, maxPrice } = req.body;
+
+    console.log({ page, limit, searchText, minPrice, maxPrice });
+
+    const skip = (page - 1) * limit;
+
+    let match = {};
+
+    if (searchText) {
+      match = { name: { $regex: searchText, $options: "i" } };
+    }
+
+
+    if (minPrice && maxPrice && maxPrice < minPrice) {
+      return res
+        .status(409)
+        .send({ message: "Min price cannot be greater than max price." });
+    }
+
+    if (minPrice || maxPrice) {
+      match = { ...match, price: { $gte: minPrice, $lte: maxPrice } };
+    }
+
+    console.log(match);
+    const products = await Product.aggregate([
+      {
+        $match: match,
+      },
+      {
+        $skip: skip,
+      },
+      { $limit: limit },
+      {
+        $project: {
+          name: 1,
+          brand: 1,
+          price: 1,
+          availableQuantity: 1,
+          description: { $substr: ["$description", 0, 200] },
+          image: 1,
+        },
+      },
+    ]);
+
+    // total products
+    const totalProducts = await Product.find(match).countDocuments();
+
+    // total pages
+    const totalPage = Math.ceil(totalProducts / limit);
+
+    return res
+      .status(200)
+      .send({ message: "success", productList: products, totalPage });
+  }
+);
+
+// list product by seller
+router.post(
+  "/product/list/seller",
+  isSeller,
+  validateReqBody(paginationValidationSchema),
+  async (req, res) => {
+    // extract pagination data from req.body
+    const { page, limit } = req.body;
+
+    // calculate skip
+    const skip = (page - 1) * limit;
+
+    const products = await Product.aggregate([
+      {
+        $match: {
+          sellerId: req.loggedInUserId,
+        },
+      },
+
+      { $skip: skip },
+
+      { $limit: limit },
+
+      {
+        $project: {
+          name: 1,
+          brand: 1,
+          price: 1,
+          availableQuantity: 1,
+          description: { $substr: ["$description", 0, 200] },
+          image: 1,
+        },
+      },
+    ]);
+
+    // calculate page
+    const totalProducts = await Product.find({
+      sellerId: req.loggedInUserId,
+    }).countDocuments();
+
+    // total page
+    const totalPage = Math.ceil(totalProducts / limit);
+
+    return res
+      .status(200)
+      .send({ message: "success", productList: products, totalPage });
+  }
+);
+export default router;
